@@ -1,0 +1,26 @@
+# Doxygen configuration for libmtk.  Run `doxygen` in the project
+# root; the HTML reference appears in docs/api/html/.
+
+PROJECT_NAME           = "libmtk"
+PROJECT_NUMBER         = 0.1.0
+PROJECT_BRIEF          = "Motif-style widget toolkit on raw Xlib"
+
+INPUT                  = include README.md docs/pitfalls.md
+FILE_PATTERNS          = *.h *.md
+RECURSIVE              = YES
+IMAGE_PATH             = tutorial/img
+USE_MDFILE_AS_MAINPAGE = README.md
+OUTPUT_DIRECTORY       = docs/api
+STRIP_FROM_PATH        = .
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
+TYPEDEF_HIDES_STRUCT   = YES
+JAVADOC_AUTOBRIEF      = YES
+EXTRACT_ALL            = NO
+WARN_IF_UNDOCUMENTED   = YES
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+FULL_PATH_NAMES        = NO
+QUIET                  = YES
