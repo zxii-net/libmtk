@@ -1,0 +1,76 @@
+# Builds the Doxygen API reference and publishes it with GitHub Pages.
+#
+# Site layout: the root is the README (and the other markdown files,
+# tutorial included) rendered by GitHub's stock Jekyll builder; the
+# Doxygen API reference goes under /docs/.
+#
+# The configure-pages step enables Pages on first run. The custom
+# domain (libmtk.dev.zxii.net) is configured in Settings -> Pages —
+# with Actions-based deployment a CNAME file in the artifact is
+# ignored, so the domain lives in the repo settings, not here.
+
+name: docs
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Creates the Pages site (build_type "workflow") on first run,
+      # so no manual Settings -> Pages step is needed.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # Renders README.md as the site index and the rest of the
+      # markdown (tutorial/, docs/pitfalls.md) as pages. Must run
+      # before doxygen so the (gitignored) docs/api output does not
+      # get swept into the Jekyll site as static files.
+      - name: Render markdown site root with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Install doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends doxygen
+
+      - name: Build API reference
+        run: doxygen
+
+      # Jekyll's output is root-owned, hence sudo.
+      - name: Place API reference under /docs/
+        run: |
+          sudo mkdir -p _site/docs
+          sudo cp -r docs/api/html/. _site/docs/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
