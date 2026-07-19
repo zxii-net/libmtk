@@ -110,9 +110,11 @@ int main(void)
 
 ## Documentation
 
-- **[The tutorial](tutorial/)** — five chapters from a first window
-  to custom widgets, menus and theming, each built around a complete
-  program that compiles with the library
+- **[The tutorial](tutorial/)** — nine chapters from a first window
+  through custom widgets, menus, scrolling, background work and
+  pixel graphics, plus three appendices building complete
+  applications (a file manager, a live log viewer, a paint program).
+  Every program compiles with the library
   (`build/tutorial/examples/tut-*`). Start here.
 - **API reference** — every public type and function is documented
   in [`include/mtk/mtk.h`](include/mtk/mtk.h); run `doxygen` in the

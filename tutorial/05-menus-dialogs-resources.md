@@ -165,18 +165,16 @@ muted / primary / active color groups.
 
 ## Where to go from here
 
-You now know the whole toolkit: the application/window/widget model,
-the event flow, every standard widget, how to write your own, menus,
-dialogs and configuration. Two suggestions:
-
-- **Build something real.** A file browser (tree + list + sash), an
-  image or log viewer, a music playlist — anything with a couple of
-  panes and a custom canvas will exercise every pattern from these
-  five chapters and fit comfortably in a few hundred lines.
-- **Read the reference.** [`../README.md`](../README.md) is the
-  contract: ownership rules, clipping rules, the palette groups —
-  and [`../docs/pitfalls.md`](../docs/pitfalls.md) collects the
-  mistakes worth rereading after your first real program.
+Part I ends here: you know the application/window/widget model, the
+event flow, the standard widgets, how to write your own, menus,
+dialogs and configuration. [Part II](README.md#part-ii--building-blocks-for-real-applications)
+builds the remaining capabilities — scrolling your own content,
+lazy trees, background work, and pixel graphics — on the way to
+three complete applications: a file manager, a live log viewer and a
+paint program. Alongside the chapters, keep
+[`../README.md`](../README.md) (the contract: ownership rules,
+clipping rules, the palette groups) and
+[`../docs/pitfalls.md`](../docs/pitfalls.md) within reach.
 
 **Exercises**
 
@@ -190,3 +188,5 @@ dialogs and configuration. Two suggestions:
    `mtk_app_set_theme` — then try expressing it as X resources and
    sketch what a `notes*MtkBackground:`-style extension to the
    toolkit would need.
+
+Next: [Scrolling your own content](06-scrolling-content.md).
