@@ -1,8 +1,9 @@
 # Builds the Doxygen API reference and publishes it with GitHub Pages.
 #
-# Site layout: the root is the README (and the other markdown files,
-# tutorial included) rendered by GitHub's stock Jekyll builder; the
-# Doxygen API reference goes under /docs/.
+# Site layout: the root is the README (plus tutorial and pitfalls)
+# rendered by docs/site/build.sh with pandoc; the Doxygen API
+# reference goes under /docs/.  Not Jekyll: Liquid cannot cope with
+# C code blocks containing "{{" (nested brace initializers).
 #
 # The configure-pages step enables Pages on first run. The custom
 # domain (libmtk.dev.zxii.net) is configured in Settings -> Pages —
@@ -37,29 +38,13 @@ jobs:
         with:
           enablement: true
 
-      # Renders README.md as the site index and the rest of the
-      # markdown (tutorial/, docs/pitfalls.md) as pages. Must run
-      # before doxygen so the (gitignored) docs/api output does not
-      # get swept into the Jekyll site as static files.
-      - name: Render markdown site root with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./
-          destination: ./_site
-
-      - name: Install doxygen
+      - name: Install doxygen and pandoc
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends doxygen
+          sudo apt-get install -y --no-install-recommends doxygen pandoc
 
-      - name: Build API reference
-        run: doxygen
-
-      # Jekyll's output is root-owned, hence sudo.
-      - name: Place API reference under /docs/
-        run: |
-          sudo mkdir -p _site/docs
-          sudo cp -r docs/api/html/. _site/docs/
+      - name: Build site
+        run: sh docs/site/build.sh
 
       - uses: actions/upload-pages-artifact@v3
         with:

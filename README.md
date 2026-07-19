@@ -62,7 +62,7 @@ tree — a checkout, a symlink to one, or a wrap file:
 ```ini
 # subprojects/libmtk.wrap
 [wrap-git]
-url = https://github.com/spegelref/libmtk.git
+url = https://github.com/zxii-net/libmtk.git
 revision = head
 
 [provide]
