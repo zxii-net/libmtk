@@ -64,10 +64,18 @@ static void sash_destroy(MtkWidget *w)
     free(w);
 }
 
+static void sash_measure(MtkWidget *w, int *nw, int *nh)
+{
+    (void)w;
+    *nw = MTK_SASH_W;
+    *nh = -1;
+}
+
 static const MtkWidgetOps sash_ops = {
     .draw = sash_draw,
     .event = sash_event,
     .destroy = sash_destroy,
+    .measure = sash_measure,
 };
 
 MtkSash *mtk_sash_create(MtkWindow *win, MtkWidget *parent,

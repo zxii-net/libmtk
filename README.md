@@ -13,11 +13,15 @@ stack beyond the core X fonts the look calls for.
 ## Features
 
 - **The classic widget set**: push/toggle buttons, labels, text
-  entries, integer spinboxes, scrollbars, tabs, list boxes
-  (multi-select, drag-to-reorder), lazy tree views, draggable pane
-  sashes, a Motif-style file selection dialog, and a menu bar with
-  pulldowns, mnemonics (Alt+F), keyboard navigation and the
+  entries, integer spinboxes, scrollbars, tabs, titled frames, list
+  boxes (multi-select, drag-to-reorder), lazy tree views, draggable
+  pane sashes, a Motif-style file selection dialog, and a menu bar
+  with pulldowns, mnemonics (Alt+F), keyboard navigation and the
   traditional right-aligned Help menu.
+- **Optional layout trees**: rows, columns, form grids, sash splits,
+  stacks and content-sized frames that place widgets automatically —
+  attach one to a window and the resize handler disappears. Manual
+  absolute layout remains fully supported, and both mix freely.
 - **Themes** with four built-in looks (`steel`, `desert`,
   `platinum`, `graphite`), configured per user and per application
   through the X resource database — `myapp*MtkTheme: desert` via
@@ -110,9 +114,9 @@ int main(void)
 
 ## Documentation
 
-- **[The tutorial](tutorial/)** — nine chapters from a first window
-  through custom widgets, menus, scrolling, background work and
-  pixel graphics, plus three appendices building complete
+- **[The tutorial](tutorial/)** — ten chapters from a first window
+  through custom widgets, menus, scrolling, background work, pixel
+  graphics and layout trees, plus three appendices building complete
   applications (a file manager, a live log viewer, a paint program).
   Every program compiles with the library
   (`build/tutorial/examples/tut-*`). Start here.
@@ -327,6 +331,48 @@ top/bottom pair, and a selection highlight is `primary` +
 `primary_text`. Compact data widgets take the surface tone; large
 canvases (icon grids, preview areas) take the muted tone.
 
+### Layouts
+
+Manual layout (a `layout()` function from `on_resize`) is the
+primitive; **layout trees** are the optional layer on top. A tree of
+geometry nodes describes how a rectangle divides; applying it ends in
+ordinary `mtk_widget_set_rect` calls:
+
+```c
+mtk_window_set_layout(win, mtk_lay_appframe(&menubar->base,
+    mtk_lay_split(sash,
+        mtk_lay_min(mtk_lay_widget(&tree->base), 120, 0),
+        mtk_lay_widget(&list->base)),
+    &status->base));
+```
+
+That is a complete resizable application shape — menubar, two
+sash-divided panes, statusbar — with no resize handler.
+
+- **Containers**: `mtk_lay_row` / `mtk_lay_col` (linear, gapped),
+  `mtk_lay_grid` (form grids: columns size to their widest cell),
+  `mtk_lay_stack` (children share one rectangle; toggle visibility
+  to switch), `mtk_lay_split` (two panes and a sash — the node owns
+  the split position, its clamping and the sash's `on_drag`),
+  `mtk_lay_framed` (a titled `MtkFrame` sized around its content),
+  and the `mtk_lay_appframe` convenience.
+- **Sizing** resolves per axis: fixed (`mtk_lay_fixed`/`wfix`), then
+  natural (the widget's `measure` op — buttons measure their label,
+  entries are `MTK_ROW_H` tall, custom widgets without `measure` are
+  elastic), then leftover shared by weight (`mtk_lay_stretch`,
+  `mtk_lay_spacer`). `mtk_lay_pad`, `mtk_lay_min` and
+  `mtk_lay_align` refine placement.
+- **Visibility collapses**: hiding a widget removes its node's space
+  and gap, and the window relayouts automatically
+  (`mtk_lay_keep_space` opts out). This is how optional panes and
+  stacked mode switches work with zero geometry code.
+- **Ownership**: a tree given to `mtk_window_set_layout` is freed
+  with the window; a tree used manually via `mtk_lay_apply` (for
+  mixing with hand layout inside `on_resize`) is freed by the caller
+  with `mtk_lay_free`. Nodes never own widgets.
+
+Chapter 10 of the tutorial builds a full application this way.
+
 ## Widget catalog
 
 | widget | constructor | notes |
@@ -339,7 +385,8 @@ canvases (icon grids, preview areas) take the muted tone.
 | `MtkTabs` | `mtk_tabs_create` | tab *bar* only; the app shows/hides panels in `on_change` |
 | `MtkListbox` | `mtk_listbox_create` | scrolling string list; `on_select` / `on_activate` (double click, Return) / `on_delete` (Delete key); see below for multi-select and reorder |
 | `MtkTree` | `mtk_tree_create` | lazy tree: `on_expand` populates a node's children on first expansion via `mtk_tree_node_add` |
-| `MtkSash` | `mtk_sash_create` | draggable vertical divider; reports new x in `on_drag`, app relayouts |
+| `MtkSash` | `mtk_sash_create` | draggable vertical divider; reports new x in `on_drag` (or managed entirely by `mtk_lay_split`) |
+| `MtkFrame` | `mtk_frame_create` | titled etched frame (XmFrame look); pair with `mtk_lay_framed` to size it around content |
 | `MtkMenuBar` | `mtk_menubar_create` | menu bar + pulldowns; see below |
 | `MtkFileDialog` | `mtk_file_dialog` | XmFileSelectionBox-style open/save dialog in its own toplevel; fires `on_done` once (path or nullptr) and destroys itself |
 

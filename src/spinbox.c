@@ -129,10 +129,18 @@ static void spin_destroy(MtkWidget *w)
     free(w);
 }
 
+static void spin_measure(MtkWidget *w, int *nw, int *nh)
+{
+    (void)w;
+    *nw = 90;
+    *nh = MTK_ROW_H;
+}
+
 static const MtkWidgetOps spin_ops = {
     .draw = spin_draw,
     .event = spin_event,
     .destroy = spin_destroy,
+    .measure = spin_measure,
 };
 
 MtkSpinbox *mtk_spinbox_create(MtkWindow *win, MtkWidget *parent,

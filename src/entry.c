@@ -194,11 +194,19 @@ static void entry_destroy(MtkWidget *w)
     free(e);
 }
 
+static void entry_measure(MtkWidget *w, int *nw, int *nh)
+{
+    (void)w;
+    *nw = -1; /* elastic */
+    *nh = MTK_ROW_H;
+}
+
 static const MtkWidgetOps entry_ops = {
     .draw = entry_draw,
     .event = entry_event,
     .key = entry_key,
     .destroy = entry_destroy,
+    .measure = entry_measure,
 };
 
 MtkEntry *mtk_entry_create(MtkWindow *win, MtkWidget *parent)

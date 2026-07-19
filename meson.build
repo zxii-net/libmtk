@@ -1,7 +1,7 @@
 project(
   'mtk',
   'c',
-  version: '0.1.0',
+  version: '0.2.0',
   license: 'LGPL-2.1-only',
   default_options: [
     'c_std=c23',
@@ -33,6 +33,8 @@ mtk_sources = files(
   'src/listbox.c',
   'src/tree.c',
   'src/sash.c',
+  'src/frame.c',
+  'src/layout.c',
   'src/menubar.c',
   'src/filedlg.c',
 )
@@ -44,7 +46,9 @@ libmtk = library(
   mtk_sources,
   include_directories: mtk_inc,
   dependencies: [x11_dep, xrender_dep],
-  version: meson.project_version(),
+  # library (ABI) version; soname bumped for 0.2.0 when
+  # MtkWidgetOps grew the `measure` member
+  version: '1.0.0',
   install: true,
 )
 

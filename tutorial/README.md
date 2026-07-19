@@ -51,6 +51,10 @@ chapter supplies one capability they need:
 9. [Pixels and XRender](09-pixels-xrender.md) —
    ARGB buffers, uploading to the server, scaled compositing;
    an animated plasma.
+10. [Layouts](10-layouts.md) —
+    geometry trees that place widgets automatically: rows, grids,
+    frames, splits, stacks; a contact editor with zero geometry
+    code.
 
 ## Appendices — three real programs
 

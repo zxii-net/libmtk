@@ -424,10 +424,18 @@ static void menubar_destroy(MtkWidget *w)
     free(mb);
 }
 
+static void menubar_measure(MtkWidget *w, int *nw, int *nh)
+{
+    (void)w;
+    *nw = -1;
+    *nh = MTK_MENUBAR_H;
+}
+
 static const MtkWidgetOps menubar_ops = {
     .draw = menubar_draw,
     .event = menubar_event,
     .destroy = menubar_destroy,
+    .measure = menubar_measure,
 };
 
 MtkMenuBar *mtk_menubar_create(MtkWindow *win, MtkWidget *parent,

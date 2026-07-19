@@ -45,9 +45,19 @@ static void label_destroy(MtkWidget *w)
     free(l);
 }
 
+static void label_measure(MtkWidget *w, int *nw, int *nh)
+{
+    MtkLabel *l = (MtkLabel *)w;
+    MtkApp *app = w->win->app;
+    XFontSet font = l->bold ? app->font_bold : app->font;
+    *nw = mtk_text_width(font, l->text);
+    *nh = mtk_font_height(font) + 6;
+}
+
 static const MtkWidgetOps label_ops = {
     .draw = label_draw,
     .destroy = label_destroy,
+    .measure = label_measure,
 };
 
 MtkLabel *mtk_label_create(MtkWindow *win, MtkWidget *parent,

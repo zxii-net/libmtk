@@ -366,6 +366,9 @@ void mtk_widget_set_visible(MtkWidget *w, bool visible)
         return;
     w->visible = visible;
     mtk_window_damage(w->win);
+    /* an attached layout collapses hidden nodes: re-apply */
+    if (w->win && w->win->lay)
+        mtk_window_relayout(w->win);
 }
 
 bool mtk_widget_contains(const MtkWidget *w, int x, int y)
@@ -548,6 +551,21 @@ void mtk_window_set_focus(MtkWindow *win, MtkWidget *w)
     mtk_window_damage(win);
 }
 
+void mtk_window_set_layout(MtkWindow *win, MtkLay *root)
+{
+    if (win->lay)
+        mtk_lay_free(win->lay);
+    win->lay = root;
+    mtk_window_relayout(win);
+}
+
+void mtk_window_relayout(MtkWindow *win)
+{
+    if (win->lay)
+        mtk_lay_apply(win->lay, 0, 0, win->w, win->h);
+    mtk_window_damage(win);
+}
+
 void mtk_window_destroy(MtkWindow *win)
 {
     win->dying = true;
@@ -557,6 +575,10 @@ static void window_free(MtkApp *app, MtkWindow *win)
 {
     if (win->on_destroy)
         win->on_destroy(win);
+    if (win->lay) {
+        mtk_lay_free(win->lay);
+        win->lay = nullptr;
+    }
     while (win->root.nchildren > 0)
         mtk_widget_destroy(win->root.children[win->root.nchildren - 1]);
     free(win->root.children);
@@ -698,6 +720,8 @@ static void dispatch_event(MtkApp *app, XEvent *ev)
             win->h = ev->xconfigure.height;
             win->root.w = win->w;
             win->root.h = win->h;
+            if (win->lay)
+                mtk_lay_apply(win->lay, 0, 0, win->w, win->h);
             if (win->on_resize)
                 win->on_resize(win);
             win->damage = true;

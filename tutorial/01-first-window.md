@@ -71,8 +71,11 @@ chapter of this tutorial.
 
 ## Layout is your job
 
-libmtk has no layout managers. The application positions every
-widget, in window coordinates, whenever the window changes size:
+In this first program the application positions every widget itself,
+in window coordinates, whenever the window changes size. (libmtk
+*does* have layout containers — chapter 10 — but they compile down
+to exactly what we are about to do by hand, so this is the right
+place to start.)
 
 ```c
 static void layout(MtkWindow *win)

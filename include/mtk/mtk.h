@@ -41,6 +41,8 @@
 typedef struct MtkApp MtkApp;
 typedef struct MtkWindow MtkWindow;
 typedef struct MtkWidget MtkWidget;
+/** Opaque layout node; see @ref layout. */
+typedef struct MtkLay MtkLay;
 
 /**
  * @defgroup theme Colors and themes
@@ -162,6 +164,10 @@ typedef struct MtkWidgetOps {
     /** Free widget-owned resources, including the widget memory
      *  itself when it was heap allocated by its constructor. */
     void (*destroy)(MtkWidget *w);
+    /** Report the preferred size for layout (see @ref layout); write
+     *  -1 on an axis that is elastic.  An unset slot means elastic in
+     *  both axes (typical for custom canvases). */
+    void (*measure)(MtkWidget *w, int *natural_w, int *natural_h);
 } MtkWidgetOps;
 
 /** Base of every widget; embed as the first struct member. */
@@ -251,6 +257,8 @@ struct MtkWindow {
     int last_click_y;           /**< double-click tracking */
     unsigned last_click_button; /**< double-click tracking */
 
+    MtkLay *lay;      /**< attached layout tree; may be null */
+
     MtkWindow *next;  /**< application window list */
 };
 
@@ -274,6 +282,14 @@ void mtk_window_destroy(MtkWindow *win);
 void mtk_window_damage(MtkWindow *win);
 /** Move keyboard focus to a widget (or nullptr to clear). */
 void mtk_window_set_focus(MtkWindow *win, MtkWidget *w);
+/** Attach a layout tree (see @ref layout).  The window takes
+ *  ownership, applies it now and on every resize (before
+ *  `on_resize`, which still fires afterwards for manual tweaks).
+ *  Replaces and frees any previously attached tree. */
+void mtk_window_set_layout(MtkWindow *win, MtkLay *root);
+/** Re-apply the attached layout (after model changes).  Visibility
+ *  changes trigger this automatically. */
+void mtk_window_relayout(MtkWindow *win);
 
 /** @} */
 
@@ -428,10 +444,14 @@ void mtk_clear_clip(MtkWindow *win);
  * @brief Buttons, labels, entries, lists, trees, menus and friends.
  *
  * Constructors return the concrete struct; position widgets with
- * `mtk_widget_set_rect(&w->base, ...)`.  Simple properties are plain
- * struct fields; assign them directly.
+ * `mtk_widget_set_rect(&w->base, ...)` or through a layout tree
+ * (see @ref layout).  Simple properties are plain struct fields;
+ * assign them directly.
  * @{
  */
+
+enum { MTK_ROW_H = 26 }; /**< standard control-row height (buttons,
+                          *   entries, spinboxes) */
 
 /** Push button, or latching toggle when @ref toggle is set. */
 typedef struct MtkButton {
@@ -802,6 +822,122 @@ enum { MTK_SASH_W = 6 }; /**< standard sash width */
 MtkSash *mtk_sash_create(MtkWindow *win, MtkWidget *parent,
                          void (*on_drag)(MtkSash *s, int new_x, void *data),
                          void *data);
+
+/** Titled etched frame (the Motif XmFrame look).  It only draws the
+ *  border and title; place content inside it yourself or with
+ *  mtk_lay_framed(), which sizes the frame around its content. */
+typedef struct MtkFrame {
+    MtkWidget base;  /**< widget base */
+    char *label;     /**< UTF-8 title (owned); may be empty */
+} MtkFrame;
+
+/** Create a frame.  Pass "" for an untitled etched box. */
+MtkFrame *mtk_frame_create(MtkWindow *win, MtkWidget *parent,
+                           const char *label);
+/** Replace the title. */
+void mtk_frame_set_label(MtkFrame *f, const char *label);
+/** Content insets: distance from the frame's rectangle to the area
+ *  available for content (top includes the title). */
+void mtk_frame_insets(const MtkFrame *f, int *top, int *side,
+                      int *bottom);
+
+/** @} */
+
+/**
+ * @defgroup layout Layouts
+ * @brief Optional geometry trees that place widgets automatically.
+ *
+ * A layout is a tree of geometry nodes, *not* widgets: nodes do not
+ * draw or receive events; applying the tree to a rectangle
+ * distributes it recursively and finishes in ordinary
+ * mtk_widget_set_rect() calls.  Attach a tree to a window with
+ * mtk_window_set_layout() and the resize handler disappears; or
+ * apply subtrees manually with mtk_lay_apply() inside a hand-written
+ * `on_resize` and mix both styles freely.
+ *
+ * **Sizing.**  Linear containers distribute their axis in three
+ * passes: fixed sizes first, then *natural* sizes (from the widget's
+ * `measure` op), then the leftover split between stretch nodes by
+ * weight.  Nodes without a measurable size default to stretch 1.
+ * On the cross axis children fill unless aligned.
+ *
+ * **Visibility.**  A hidden widget collapses its node — it takes no
+ * space and its gap disappears — and the window relayouts
+ * automatically; mtk_lay_keep_space() opts out per node.
+ *
+ * **Ownership.**  A tree given to mtk_window_set_layout() is owned
+ * and freed by the window; a tree used via mtk_lay_apply() is freed
+ * by the caller with mtk_lay_free().  Nodes never own widgets.
+ * @{
+ */
+
+/** Alignment of a node inside its cell when it is smaller. */
+typedef enum MtkLayAlign {
+    MTK_LAY_FILL,    /**< stretch to the cell (default) */
+    MTK_LAY_START,   /**< left / top */
+    MTK_LAY_CENTER,  /**< centered */
+    MTK_LAY_END,     /**< right / bottom */
+} MtkLayAlign;
+
+/* --- leaves --- */
+
+/** A leaf positioning one widget. */
+MtkLay *mtk_lay_widget(MtkWidget *w);
+/** A stretchable empty gap (weight 1). */
+MtkLay *mtk_lay_spacer(void);
+/** Shorthand: widget leaf with a fixed size (-1 = elastic axis). */
+MtkLay *mtk_lay_wfix(MtkWidget *w, int width, int height);
+/** Shorthand: widget leaf stretched with `weight`. */
+MtkLay *mtk_lay_wstretch(MtkWidget *w, int weight);
+
+/* --- containers; child lists are nullptr-terminated --- */
+
+/** Children left to right, `gap` pixels apart. */
+MtkLay *mtk_lay_row(int gap, ...);
+/** Children top to bottom, `gap` pixels apart. */
+MtkLay *mtk_lay_col(int gap, ...);
+/** Row-major cells in `ncols` columns; column widths and row
+ *  heights size to their largest cell. */
+MtkLay *mtk_lay_grid(int ncols, int gap, ...);
+/** Children overlaid on the same rectangle; toggle visibility to
+ *  switch between them. */
+MtkLay *mtk_lay_stack(MtkLay *first, ...);
+/** Two panes divided by a draggable sash.  The node positions both
+ *  panes and the sash, owns the split position and its clamping,
+ *  and takes over the sash's `on_drag`. */
+MtkLay *mtk_lay_split(MtkSash *sash, MtkLay *first, MtkLay *second);
+/** Wrap `inner` in a titled frame sized around it. */
+MtkLay *mtk_lay_framed(MtkFrame *frame, MtkLay *inner);
+/** The classic application shape: menubar on top, statusbar at the
+ *  bottom, `content` stretching between (menubar/statusbar may be
+ *  nullptr). */
+MtkLay *mtk_lay_appframe(MtkWidget *menubar, MtkLay *content,
+                         MtkWidget *statusbar);
+/** Append a child to a row/col/grid/stack (for loops and
+ *  conditional UIs). */
+void mtk_lay_add(MtkLay *container, MtkLay *child);
+
+/* --- per-node policy; each returns its argument for nesting --- */
+
+/** Fix the size (-1 leaves an axis alone). */
+MtkLay *mtk_lay_fixed(MtkLay *l, int w, int h);
+/** Take a weighted share of the leftover space (weight >= 1). */
+MtkLay *mtk_lay_stretch(MtkLay *l, int weight);
+/** Margin around the node. */
+MtkLay *mtk_lay_pad(MtkLay *l, int pad);
+/** Minimum size (also the pane minimum inside mtk_lay_split()). */
+MtkLay *mtk_lay_min(MtkLay *l, int w, int h);
+/** Alignment inside the cell when smaller than it. */
+MtkLay *mtk_lay_align(MtkLay *l, MtkLayAlign halign, MtkLayAlign valign);
+/** Keep the node's space when its widget is hidden. */
+MtkLay *mtk_lay_keep_space(MtkLay *l);
+
+/* --- applying --- */
+
+/** Distribute a rectangle to the tree (manual mode). */
+void mtk_lay_apply(MtkLay *root, int x, int y, int w, int h);
+/** Free a tree (never the widgets it references). */
+void mtk_lay_free(MtkLay *root);
 
 /** @} */
 

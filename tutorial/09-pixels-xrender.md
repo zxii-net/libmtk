@@ -113,7 +113,4 @@ holds because the draw handler letterboxes inside the widget.
 3. Draw a text overlay (an FPS counter) *after* the composite in the
    same draw handler, with `mtk_draw_text_centered`.
 
-Next: the appendices put everything to work —
-[A: a file manager](a-file-manager.md),
-[B: a log viewer](b-log-viewer.md),
-[C: a paint program](c-paint-program.md).
+Next: [Layouts](10-layouts.md).

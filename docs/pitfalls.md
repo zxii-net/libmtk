@@ -103,6 +103,22 @@ picks it up automatically). This is inherent to core X fonts —
 misc-fixed covers Latin, Cyrillic, Greek and Japanese nearly
 everywhere.
 
+## Layout tree freed twice (or never)
+
+**Symptom:** crash on window close, or a leak report for `MtkLay`
+nodes.
+
+**Cause:** the two ownership modes were mixed up. A tree passed to
+`mtk_window_set_layout` belongs to the window and is freed with it;
+a tree you apply manually with `mtk_lay_apply` is yours until you
+call `mtk_lay_free`. Calling `mtk_lay_free` on an attached tree
+double-frees; never freeing a manual tree leaks.
+
+**Fix:** pick one mode per tree. Attached: create, attach, forget.
+Manual: create, keep the pointer, free it when the widgets go away.
+And remember nodes never own widgets — destroying a tree leaves the
+widgets exactly where they were last placed.
+
 ## Alt shortcuts typing into entries
 
 **Symptom** (only if you bypass the toolkit): pressing Alt+F inserts

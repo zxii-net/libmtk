@@ -11,6 +11,7 @@ tut_examples = [
   ['tut-07-dirtree', '07-dirtree.c'],
   ['tut-08-dusage', '08-dusage.c'],
   ['tut-09-pixels', '09-pixels.c'],
+  ['tut-10-contacts', '10-contacts.c'],
   ['tut-a-mfm', 'a-mfm.c'],
   ['tut-b-tailview', 'b-tailview.c'],
   ['tut-c-mpaint', 'c-mpaint.c'],

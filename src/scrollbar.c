@@ -184,10 +184,18 @@ static void sb_destroy(MtkWidget *w)
     free(w);
 }
 
+static void sb_measure(MtkWidget *w, int *nw, int *nh)
+{
+    MtkScrollbar *sb = (MtkScrollbar *)w;
+    *nw = sb->horizontal ? -1 : MTK_SCROLLBAR_W;
+    *nh = sb->horizontal ? MTK_SCROLLBAR_W : -1;
+}
+
 static const MtkWidgetOps sb_ops = {
     .draw = sb_draw,
     .event = sb_event,
     .destroy = sb_destroy,
+    .measure = sb_measure,
 };
 
 MtkScrollbar *mtk_scrollbar_create(MtkWindow *win, MtkWidget *parent,

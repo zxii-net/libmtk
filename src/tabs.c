@@ -105,10 +105,18 @@ static void tabs_destroy(MtkWidget *w)
     free(t);
 }
 
+static void tabs_measure(MtkWidget *w, int *nw, int *nh)
+{
+    (void)w;
+    *nw = -1;
+    *nh = MTK_TABS_H;
+}
+
 static const MtkWidgetOps tabs_ops = {
     .draw = tabs_draw,
     .event = tabs_event,
     .destroy = tabs_destroy,
+    .measure = tabs_measure,
 };
 
 MtkTabs *mtk_tabs_create(MtkWindow *win, MtkWidget *parent,

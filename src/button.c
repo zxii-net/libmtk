@@ -87,10 +87,18 @@ static void button_destroy(MtkWidget *w)
     free(b);
 }
 
+static void button_measure(MtkWidget *w, int *nw, int *nh)
+{
+    MtkButton *b = (MtkButton *)w;
+    *nw = mtk_text_width(w->win->app->font, b->label) + 2 * PAD_X;
+    *nh = MTK_ROW_H;
+}
+
 static const MtkWidgetOps button_ops = {
     .draw = button_draw,
     .event = button_event,
     .destroy = button_destroy,
+    .measure = button_measure,
 };
 
 MtkButton *mtk_button_create(MtkWindow *win, MtkWidget *parent,
